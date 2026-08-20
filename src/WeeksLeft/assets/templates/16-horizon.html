@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Horizon</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* The sun tracks life progress across the sky; the day is far from over. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var horizon = b.H * 0.72;
+
+  /* sky glow around the sun, kept subtle so pure black stays black elsewhere */
+  var k = Math.min(1, Math.max(0, d.percent / 100));
+  var sunX = b.left + b.w * k;
+  var sunY = horizon - Math.sin(Math.PI * k) * (b.H * 0.42) - 10 * u;
+  var glow = g.createRadialGradient(sunX, sunY, 0, sunX, sunY, b.H * 0.55);
+  glow.addColorStop(0, p.acc(0.30));
+  glow.addColorStop(0.45, p.acc(0.07));
+  glow.addColorStop(1, p.acc(0));
+  g.fillStyle = glow;
+  g.fillRect(0, 0, b.W, b.H);
+
+  /* the arc the sun travels */
+  g.strokeStyle = p.dim(0.13);
+  g.lineWidth = Math.max(1, 1.6 * u);
+  g.beginPath();
+  for (var i = 0; i <= 240; i++) {
+    var t = i / 240;
+    var x = b.left + b.w * t;
+    var y = horizon - Math.sin(Math.PI * t) * (b.H * 0.42) - 10 * u;
+    if (i === 0) g.moveTo(x, y); else g.lineTo(x, y);
+  }
+  g.stroke();
+
+  /* the sun */
+  var rad = 34 * u;
+  WL.dot(g, sunX - rad, sunY - rad, rad * 2, p.accent);
+
+  /* horizon rule */
+  g.strokeStyle = p.dim(0.22);
+  g.lineWidth = Math.max(1, 2 * u);
+  g.beginPath(); g.moveTo(b.left, horizon); g.lineTo(b.W - b.right, horizon); g.stroke();
+
+  /* Weeks along the ground, grouped so the ticks never merge into a solid bar. */
+  var total = Math.max(1, d.weeksTotal);
+  var group = Math.max(1, Math.ceil(total / (b.w / (9 * u))));
+  var ticks = Math.ceil(total / group);
+  var stepX = b.w / ticks;
+  var tickW = Math.max(1.5, stepX * 0.42);
+  for (var ti = 0; ti < ticks; ti++) {
+    var passed = ti * group < d.weeksLived;
+    g.fillStyle = passed ? p.dim(0.40) : p.dim(0.12);
+    g.fillRect(b.left + ti * stepX, horizon + 16 * u, tickW, passed ? 22 * u : 10 * u);
+  }
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: b.left + 'px', bottom: (b.bottom + 52 * u) + 'px',
+    fontSize: (120 * u) + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T[c.kLeft] : T.stillAhead, {
+    cls: 'eyebrow nw', left: b.left + 'px', bottom: b.bottom + 'px',
+    fontSize: (22 * u) + 'px', letterSpacing: (5 * u) + 'px', color: p.accent
+  });
+  add(Math.round(d.percent) + '% ' + T.done
+      + (d.customText ? '<br>' + d.customText : ''), {
+    right: b.right + 'px', bottom: b.bottom + 'px', textAlign: 'right',
+    fontSize: (22 * u) + 'px', lineHeight: '1.6', color: p.dim(0.45)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+[
+  { "id": "01-grid",     "ru": "Сетка недель",     "en": "Life in Weeks" },
+  { "id": "02-minimal",  "ru": "Минимализм",       "en": "Minimal" },
+  { "id": "03-rings",    "ru": "Кольца",           "en": "Rings" },
+  { "id": "04-squares",  "ru": "Квадраты",         "en": "Squares" },
+  { "id": "05-heatmap",  "ru": "Тепловая карта",   "en": "Heatmap" },
+  { "id": "06-fullbleed","ru": "Во весь экран",    "en": "Full Bleed" },
+  { "id": "07-months",   "ru": "Месяцы",           "en": "Months" },
+  { "id": "08-years",    "ru": "Годы",             "en": "Years" },
+  { "id": "09-timeline", "ru": "Лента",            "en": "Timeline" },
+  { "id": "10-bars",     "ru": "Полосы по годам",  "en": "Year Bars" },
+  { "id": "11-spiral",   "ru": "Спираль",          "en": "Spiral" },
+  { "id": "12-terminal", "ru": "Терминал",         "en": "Terminal" },
+  { "id": "13-blueprint","ru": "Чертёж",           "en": "Blueprint" },
+  { "id": "14-cards",    "ru": "Карточки",         "en": "Cards" },
+  { "id": "15-typo",     "ru": "Типографика",      "en": "Typography" },
+  { "id": "16-horizon",  "ru": "Горизонт",         "en": "Horizon" },
+  { "id": "17-thisyear", "ru": "Этот год",         "en": "This Year" },
+  { "id": "18-mosaic",   "ru": "Мозаика",          "en": "Mosaic" },
+  { "id": "19-orbit",    "ru": "Орбиты",           "en": "Orbit" },
+  { "id": "20-pixel",    "ru": "Пиксели",          "en": "Pixel" }
+]

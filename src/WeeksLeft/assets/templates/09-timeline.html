@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Timeline</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Every week as a tick on one long ribbon, wrapped across a handful of lines. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var total = Math.max(1, d.weeksTotal);
+  var lines = 12;
+  var perLine = Math.ceil(total / lines);
+  var lineGap = Math.min(b.h * 0.42 / lines, 58 * u);
+  var tickH = lineGap * 0.52;
+  var tickW = Math.max(1.5, (b.w / perLine) * 0.62);
+  var stepX = b.w / perLine;
+
+  var top = b.top + b.h * 0.30;
+
+  var msWeeks = {};
+  (d.milestones || []).forEach(function (m) { msWeeks[m.week] = m; });
+
+  for (var i = 0; i < total; i++) {
+    var line = Math.floor(i / perLine);
+    var x = b.left + (i % perLine) * stepX;
+    var y = top + line * lineGap;
+    var ms = msWeeks[i];
+
+    if (i === d.weeksLived) {
+      g.fillStyle = p.accent;
+      g.fillRect(x - tickW * 0.5, y - tickH * 0.35, tickW * 2.2, tickH * 1.7);
+    } else if (ms) {
+      g.fillStyle = ms.color || p.accent;
+      g.fillRect(x, y - tickH * 0.2, Math.max(tickW, 2), tickH * 1.4);
+    } else {
+      g.fillStyle = i < d.weeksLived ? p.dim(0.55) : p.dim(0.13);
+      g.fillRect(x, y, tickW, tickH);
+    }
+  }
+
+  /* year markers on the first line of each decade */
+  g.font = '600 ' + (11 * u).toFixed(1) + 'px "Segoe UI",system-ui,sans-serif';
+  g.textAlign = 'left'; g.textBaseline = 'top';
+  g.fillStyle = p.dim(0.3);
+  for (var l = 0; l < lines; l++) {
+    var yr = Math.round(l * perLine / 52);
+    g.fillText(yr + '', b.left - 30 * u, top + l * lineGap);
+  }
+
+  var add = WL.layer();
+  WL.header(add, d, p, b, Math.round(d.percent) + '% ' + T.done);
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: b.left + 'px', top: (b.top + 40 * u) + 'px',
+    fontSize: (128 * u) + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T[c.kLeft] : T.stillAhead, {
+    cls: 'eyebrow nw', left: b.left + 'px', top: (b.top + 152 * u) + 'px',
+    fontSize: (22 * u) + 'px', letterSpacing: (5 * u) + 'px', color: p.accent
+  });
+
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived]
+      + (d.customText ? ' &nbsp;&middot;&nbsp; ' + d.customText : ''), {
+    cls: 'nw', left: b.left + 'px', bottom: b.bottom + 'px',
+    fontSize: (20 * u) + 'px', color: p.dim(0.42)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

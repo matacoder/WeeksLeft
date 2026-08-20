@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Months</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* One rounded tile per month of life: 12 across, one row per year. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var rows = Math.max(1, d.gridRows);
+  var gm = WL.geom(d, b, { cols: 12, rows: rows, gap: 0.30, maxW: b.w * 0.42 });
+  var ox = b.W - b.right - gm.w;
+  var oy = b.top + (b.h - gm.h) / 2;
+  var radius = gm.cell * 0.22;
+
+  var lived = d.monthsLived, total = d.monthsTotal;
+  var msByMonth = {};
+  (d.milestones || []).forEach(function (m) {
+    msByMonth[Math.floor((m.row * 52 + m.col) / 52 * 12)] = m;
+  });
+
+  for (var row = 0; row < rows; row++) {
+    for (var col = 0; col < 12; col++) {
+      var idx = row * 12 + col;
+      var x = ox + col * gm.stepX, y = oy + row * gm.stepY;
+      var ms = msByMonth[idx];
+
+      if (idx === lived) {
+        WL.square(g, x - gm.cell * 0.22, y - gm.cell * 0.22, gm.cell * 1.44, p.accent, radius);
+      } else if (ms) {
+        WL.square(g, x, y, gm.cell, ms.color || p.accent, radius);
+      } else {
+        WL.square(g, x, y, gm.cell, idx < lived ? p.dim(0.60) : p.dim(0.11), radius);
+      }
+    }
+  }
+
+  /* month initials above the block */
+  g.font = '600 ' + (11 * u).toFixed(1) + 'px "Segoe UI",system-ui,sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'bottom';
+  g.fillStyle = p.dim(0.3);
+  for (var m2 = 0; m2 < 12; m2++) {
+    g.fillText(T.months[m2].charAt(0).toUpperCase(),
+               ox + m2 * gm.stepX + gm.cell / 2, oy - 16 * u);
+  }
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  var midY = oy + gm.h / 2;
+  var textW = ox - 90 * u - b.left;
+  var size = Math.min(textW / 3.4, 200 * u);
+  var left = Math.max(0, total - lived);
+
+  add(d.showNumbers ? WL.fmt(left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: b.left + 'px', top: (midY - size * 0.92) + 'px',
+    fontSize: size + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T.aheadM : T.stillAhead, {
+    cls: 'eyebrow nw', left: b.left + 'px', top: (midY + size * 0.08) + 'px',
+    fontSize: (24 * u) + 'px', letterSpacing: (4.5 * u) + 'px', color: p.accent
+  });
+  add(WL.fmt(lived, d.lang) + ' ' + T.livedM + ' &nbsp;&middot;&nbsp; '
+      + Math.round(d.percent) + '% ' + T.done, {
+    cls: 'nw', left: b.left + 'px', top: (midY + size * 0.08 + 52 * u) + 'px',
+    fontSize: (22 * u) + 'px', color: p.dim(0.45)
+  });
+
+  if (d.customText) {
+    add(d.customText, {
+      left: b.left + 'px', bottom: b.bottom + 'px', width: textW + 'px',
+      fontSize: (22 * u) + 'px', fontStyle: 'italic', color: p.dim(0.38)
+    });
+  }
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

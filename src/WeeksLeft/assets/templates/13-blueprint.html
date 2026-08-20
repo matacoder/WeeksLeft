@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blueprint</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Technical-drawing treatment: hairline rules, corner ticks, dimensioned grid. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  /* faint background rule grid */
+  g.strokeStyle = p.dim(0.05);
+  g.lineWidth = Math.max(1, u);
+  var step = 60 * u;
+  for (var x = 0; x < b.W; x += step) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, b.H); g.stroke(); }
+  for (var y = 0; y < b.H; y += step) { g.beginPath(); g.moveTo(0, y); g.lineTo(b.W, y); g.stroke(); }
+
+  var head = 190 * u, foot = 120 * u;
+  var gm = WL.wrapGeom(d, b, { gap: 0.44, maxH: b.h - head - foot, maxW: b.w });
+  var ox = b.left + (b.w - gm.w) / 2;
+  var oy = b.top + head;
+
+  WL.eachWeek(d, gm, ox, oy, function (cx, cy, i) {
+    if (i.state === 'now') {
+      WL.dot(g, cx - gm.cell * 0.5, cy - gm.cell * 0.5, gm.cell * 2, p.accent);
+    } else if (i.milestone) {
+      WL.dot(g, cx - gm.cell * 0.25, cy - gm.cell * 0.25, gm.cell * 1.5,
+             i.milestone.color || p.accent);
+    } else if (i.state === 'past') {
+      WL.dot(g, cx, cy, gm.cell, p.dim(0.55));
+    } else {
+      /* future weeks are drawn as outlines, like an unbuilt part */
+      g.beginPath();
+      g.arc(cx + gm.cell / 2, cy + gm.cell / 2, gm.cell / 2, 0, 6.2832);
+      g.strokeStyle = p.dim(0.22);
+      g.lineWidth = Math.max(0.8, gm.cell * 0.13);
+      g.stroke();
+    }
+  });
+
+  /* dimension line under the block */
+  var dy = oy + gm.h + 46 * u;
+  g.strokeStyle = p.dim(0.3);
+  g.lineWidth = Math.max(1, u);
+  g.beginPath();
+  g.moveTo(ox, dy); g.lineTo(ox + gm.w, dy);
+  g.moveTo(ox, dy - 9 * u); g.lineTo(ox, dy + 9 * u);
+  g.moveTo(ox + gm.w, dy - 9 * u); g.lineTo(ox + gm.w, dy + 9 * u);
+  g.stroke();
+
+  /* progress marker on that line */
+  var px = ox + gm.w * Math.min(1, d.percent / 100);
+  g.strokeStyle = p.accent;
+  g.lineWidth = Math.max(2, 2.5 * u);
+  g.beginPath(); g.moveTo(px, dy - 14 * u); g.lineTo(px, dy + 14 * u); g.stroke();
+
+  g.font = '600 ' + (14 * u).toFixed(1) + 'px "Cascadia Mono",Consolas,monospace';
+  g.textAlign = 'center'; g.textBaseline = 'top';
+  g.fillStyle = p.dim(0.4);
+  g.fillText(gm.cols + ' x ' + gm.rows, ox + gm.w / 2, dy + 20 * u);
+
+  var add = WL.layer();
+
+  add('WEEKS &middot; ' + d.countryName.toUpperCase()
+      + (d.showEndDate ? ' &middot; ' + T.until.toUpperCase() + ' ' + d.endYear : ''), {
+    cls: 'eyebrow mono nw', left: b.left + 'px', top: b.top + 'px',
+    fontSize: (15 * u) + 'px', letterSpacing: (3 * u) + 'px', color: p.dim(0.45)
+  });
+  add('SCALE 1:1 &middot; REV ' + (d.curRow) + '.' + (d.curCol), {
+    cls: 'eyebrow mono nw', right: b.right + 'px', top: b.top + 'px', textAlign: 'right',
+    fontSize: (15 * u) + 'px', letterSpacing: (3 * u) + 'px', color: p.dim(0.3)
+  });
+
+  add(WL.fmt(c.left, d.lang), {
+    cls: 'big nw', left: b.left + 'px', top: (b.top + 48 * u) + 'px',
+    fontSize: (108 * u) + 'px', color: p.fg
+  });
+  add(T[c.kLeft], {
+    cls: 'eyebrow mono nw', left: b.left + 'px', top: (b.top + 148 * u) + 'px',
+    fontSize: (19 * u) + 'px', letterSpacing: (4 * u) + 'px', color: p.accent
+  });
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived] + ' &middot; ' + Math.round(d.percent) + '% '
+      + T.done + (d.customText ? '<br>' + d.customText : ''), {
+    cls: 'mono', right: b.right + 'px', top: (b.top + 110 * u) + 'px', textAlign: 'right',
+    fontSize: (20 * u) + 'px', lineHeight: '1.7', color: p.dim(0.42)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

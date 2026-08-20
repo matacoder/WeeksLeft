@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Heatmap</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Lived weeks warm up towards the accent as the decades go by; the future stays cool. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var head = 120 * u, foot = 150 * u;
+  var gm = WL.wrapGeom(d, b, { gap: 0.28, maxH: b.h - head - foot, maxW: b.w });
+  var ox = b.left + (b.w - gm.w) / 2;
+  var oy = b.top + head + (b.h - head - foot - gm.h) / 2;
+
+  var future = p.dim(0.09);
+
+  WL.eachWeek(d, gm, ox, oy, function (x, y, i) {
+    if (i.state === 'now') {
+      WL.square(g, x - gm.cell * 0.35, y - gm.cell * 0.35, gm.cell * 1.7, p.accent, gm.cell * 0.2);
+      return;
+    }
+    if (i.milestone) {
+      WL.square(g, x, y, gm.cell, i.milestone.color || p.accent, gm.cell * 0.14);
+      return;
+    }
+    if (i.state === 'past') {
+      /* ramp from a cool mid tone to the accent across the weeks already lived */
+      var k = d.weeksLived > 0 ? i.index / d.weeksLived : 1;
+      WL.square(g, x, y, gm.cell, WL.mix(p.dim(0.30), p.accent, 0.25 + 0.75 * k), gm.cell * 0.14);
+    } else {
+      WL.square(g, x, y, gm.cell, future, gm.cell * 0.14);
+    }
+  });
+
+  var add = WL.layer();
+  WL.header(add, d, p, b, Math.round(d.percent) + '% ' + T.done);
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang) + ' <span style="color:' + p.accent
+        + ';font-size:' + (28 * u) + 'px;letter-spacing:' + (4 * u) + 'px" class="eyebrow">'
+        + T[c.kLeft] + '</span>'
+      : T.stillAhead, {
+    cls: 'nw', left: ox + 'px', bottom: b.bottom + 'px',
+    fontSize: (86 * u) + 'px', fontWeight: '200', letterSpacing: '-0.03em', color: p.fg
+  });
+
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived]
+      + (d.customText ? '<br>' + d.customText : ''), {
+    right: (b.W - ox - gm.w) + 'px', bottom: b.bottom + 'px', textAlign: 'right',
+    fontSize: (22 * u) + 'px', lineHeight: '1.6', color: p.dim(0.45)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

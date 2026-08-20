@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>This Year</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* The 52 weeks of the year you are in right now, big — with the whole life as a footnote. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  /* --- this year: 13 x 4 tiles --- */
+  var cols = 13, rows = 4;
+  var miniH = 150 * u;
+  var gm = WL.geom(d, b, { cols: cols, rows: rows, gap: 0.24,
+                           maxW: b.w * 0.86, maxH: b.h - miniH - 200 * u });
+  var ox = b.left + (b.w - gm.w) / 2;
+  var oy = b.top + 190 * u;
+  var radius = gm.cell * 0.14;
+
+  for (var i = 0; i < 52; i++) {
+    var x = ox + (i % cols) * gm.stepX, y = oy + Math.floor(i / cols) * gm.stepY;
+    if (i === d.curCol) {
+      WL.square(g, x, y, gm.cell, p.accent, radius);
+    } else {
+      WL.square(g, x, y, gm.cell, i < d.curCol ? p.dim(0.42) : p.dim(0.10), radius);
+    }
+  }
+
+  /* --- the whole life, small, along the bottom --- */
+  var lm = WL.wrapGeom(d, b, { gap: 0.7, cols: 156, maxW: b.w * 0.55, maxH: miniH });
+  var lx = b.left;
+  var ly = b.H - b.bottom - lm.h;
+  WL.eachWeek(d, lm, lx, ly, function (x, y, i) {
+    if (i.state === 'now') WL.dot(g, x - lm.cell * 0.7, y - lm.cell * 0.7, lm.cell * 2.4, p.accent);
+    else WL.dot(g, x, y, lm.cell, i.state === 'past' ? p.dim(0.30) : p.dim(0.08));
+  });
+
+  var add = WL.layer();
+  WL.header(add, d, p, b, Math.round(d.percent) + '% ' + T.done);
+
+  add(T.year + ' ' + d.curRow + ' &middot; ' + T.week + ' ' + (d.curCol + 1) + '/52', {
+    cls: 'eyebrow nw', left: ox + 'px', top: (b.top + 68 * u) + 'px',
+    fontSize: (22 * u) + 'px', letterSpacing: (5 * u) + 'px', color: p.accent
+  });
+  add(WL.fmt(52 - d.curCol - 1, d.lang), {
+    cls: 'nw', left: ox + 'px', top: (b.top + 92 * u) + 'px',
+    fontSize: (78 * u) + 'px', fontWeight: '200', letterSpacing: '-0.03em', color: p.fg
+  });
+  add(T.ahead + ' &nbsp;&middot;&nbsp; ' + T.year, {
+    cls: 'eyebrow nw', left: (ox + 108 * u) + 'px', top: (b.top + 128 * u) + 'px',
+    fontSize: (19 * u) + 'px', letterSpacing: (3.5 * u) + 'px', color: p.dim(0.45)
+  });
+  add(WL.fmt(c.left, d.lang) + ' ' + T[c.kLeft] + '<br>' + WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived]
+      + (d.customText ? '<br>' + d.customText : ''), {
+    right: (b.W - ox - gm.w) + 'px', top: (b.top + 96 * u) + 'px', textAlign: 'right',
+    fontSize: (22 * u) + 'px', lineHeight: '1.7', color: p.dim(0.45)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

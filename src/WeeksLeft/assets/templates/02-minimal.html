@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Minimal</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .huge { font-weight:150; line-height:0.82; letter-spacing:-0.045em; }
+  .bar { position:absolute; overflow:hidden; }
+  .bar i { position:absolute; left:0; top:0; height:100%; display:block; }
+</style>
+</head>
+<body>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  document.body.style.background = p.bg;
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  var midY = b.top + b.h * 0.34;
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang)
+                    : Math.round(d.percent) + '<span style="font-size:' + (110 * u) + 'px">%</span>', {
+    cls: 'huge nw', left: b.left + 'px', top: midY + 'px',
+    fontSize: (330 * u) + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T[c.kLeft] : T.done, {
+    cls: 'eyebrow nw', left: b.left + 'px', top: (midY + 300 * u) + 'px',
+    fontSize: (26 * u) + 'px', letterSpacing: (5 * u) + 'px', color: p.accent
+  });
+
+  var barY = b.H - b.bottom - 92 * u;
+  var barW = b.W - b.left - b.right;
+  var pct = Math.max(0, Math.min(100, d.percent));
+
+  add('<i style="width:' + pct + '%;background:' + p.accent + '"></i>', {
+    cls: 'bar', left: b.left + 'px', top: barY + 'px',
+    width: barW + 'px', height: Math.max(2, 3 * u) + 'px', background: p.dim(0.14)
+  });
+  add('', {
+    left: (b.left + barW * pct / 100 - 1.5 * u) + 'px', top: (barY - 13 * u) + 'px',
+    width: (3 * u) + 'px', height: (29 * u) + 'px', background: p.accent
+  });
+
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived], {
+    cls: 'nw', left: b.left + 'px', top: (barY + 26 * u) + 'px',
+    fontSize: (20 * u) + 'px', color: p.dim(0.45)
+  });
+  add(Math.round(d.percent) + '% ' + T.done, {
+    cls: 'nw', right: b.right + 'px', top: (barY + 26 * u) + 'px', textAlign: 'right',
+    fontSize: (20 * u) + 'px', color: p.dim(0.45)
+  });
+
+  if (d.customText) {
+    add(d.customText, {
+      cls: 'nw', left: b.left + 'px', top: (b.H - b.bottom - 200 * u) + 'px',
+      fontSize: (24 * u) + 'px', fontStyle: 'italic', color: p.dim(0.35)
+    });
+  }
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

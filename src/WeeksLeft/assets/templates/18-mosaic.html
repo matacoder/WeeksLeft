@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mosaic</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Lived weeks are solid tiles that breathe; the future is a faint lattice. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var head = 210 * u;
+  var gm = WL.wrapGeom(d, b, { gap: 0.26, maxH: b.h - head, maxW: b.w });
+  var ox = b.left + (b.w - gm.w) / 2;
+  var oy = b.top + head + (b.h - head - gm.h) / 2;
+
+  /* deterministic jitter so the mosaic looks hand-set but never changes between renders */
+  function noise(n) {
+    var s = Math.sin(n * 12.9898) * 43758.5453;
+    return s - Math.floor(s);
+  }
+
+  WL.eachWeek(d, gm, ox, oy, function (x, y, i) {
+    if (i.state === 'now') {
+      WL.square(g, x - gm.cell * 0.4, y - gm.cell * 0.4, gm.cell * 1.8, p.accent, gm.cell * 0.2);
+      return;
+    }
+    if (i.milestone) {
+      WL.square(g, x, y, gm.cell, i.milestone.color || p.accent, 0);
+      return;
+    }
+    if (i.state === 'past') {
+      var a = 0.34 + noise(i.index) * 0.44;
+      WL.square(g, x, y, gm.cell, p.dim(a), 0);
+    } else {
+      var inset = gm.cell * 0.34;
+      WL.square(g, x + inset, y + inset, gm.cell - inset * 2, p.dim(0.16), 0);
+    }
+  });
+
+  var add = WL.layer();
+  WL.header(add, d, p, b, Math.round(d.percent) + '% ' + T.done);
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: ox + 'px', top: (b.top + 54 * u) + 'px',
+    fontSize: (126 * u) + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T[c.kLeft] : T.stillAhead, {
+    cls: 'eyebrow nw', left: ox + 'px', top: (b.top + 168 * u) + 'px',
+    fontSize: (22 * u) + 'px', letterSpacing: (5 * u) + 'px', color: p.accent
+  });
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived]
+      + (d.customText ? '<br>' + d.customText : ''), {
+    right: (b.W - ox - gm.w) + 'px', top: (b.top + 120 * u) + 'px', textAlign: 'right',
+    fontSize: (22 * u) + 'px', lineHeight: '1.7', color: p.dim(0.45)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

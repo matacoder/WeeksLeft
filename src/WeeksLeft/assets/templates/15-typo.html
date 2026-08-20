@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Typography</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .stack { line-height:0.82; letter-spacing:-0.045em; font-weight:150; }
+  .rule { position:absolute; }
+</style>
+</head>
+<body>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* No diagram at all — just the sentence, set very large. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  document.body.style.background = p.bg;
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  var label = T[c.kLeft].toUpperCase();
+  var size = Math.min(b.w / 4.2, 300 * u);
+  var top = b.top + b.h * 0.20;
+
+  add(T.stillAhead.toUpperCase(), {
+    cls: 'eyebrow nw', left: b.left + 'px', top: top + 'px',
+    fontSize: (28 * u) + 'px', letterSpacing: (9 * u) + 'px', color: p.accent
+  });
+
+  add(WL.fmt(c.left, d.lang), {
+    cls: 'stack nw', left: b.left + 'px', top: (top + 62 * u) + 'px',
+    fontSize: size + 'px', color: p.fg
+  });
+
+  add(label, {
+    cls: 'eyebrow', left: b.left + 'px', top: (top + 62 * u + size * 0.80) + 'px',
+    width: (b.w * 0.8) + 'px',
+    fontSize: (56 * u) + 'px', letterSpacing: (6 * u) + 'px', color: p.dim(0.55)
+  });
+
+  var ruleY = top + 62 * u + size * 0.80 + 120 * u;
+  add('', {
+    cls: 'rule', left: b.left + 'px', top: ruleY + 'px',
+    width: b.w + 'px', height: Math.max(2, 3 * u) + 'px', background: p.dim(0.14)
+  });
+  add('', {
+    cls: 'rule', left: b.left + 'px', top: ruleY + 'px',
+    width: (b.w * Math.min(1, d.percent / 100)) + 'px',
+    height: Math.max(2, 3 * u) + 'px', background: p.accent
+  });
+
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived] + ' &nbsp;&middot;&nbsp; '
+      + Math.round(d.percent) + '% ' + T.done
+      + (d.customText ? ' &nbsp;&middot;&nbsp; ' + d.customText : ''), {
+    cls: 'nw', left: b.left + 'px', bottom: b.bottom + 'px',
+    fontSize: (24 * u) + 'px', color: p.dim(0.42)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

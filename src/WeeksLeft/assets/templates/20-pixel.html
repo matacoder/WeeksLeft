@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pixel</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* A dense little block of pixels, centred, with almost nothing else on screen. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var gm = WL.wrapGeom(d, b, { gap: 0.38, maxW: b.w * 0.55, maxH: b.h * 0.78 });
+  var ox = b.left + (b.w - gm.w) / 2;
+  var oy = b.top + (b.h - gm.h) / 2 - 30 * u;
+
+  WL.eachWeek(d, gm, ox, oy, function (x, y, i) {
+    if (i.state === 'now') {
+      WL.square(g, x - gm.cell * 0.5, y - gm.cell * 0.5, gm.cell * 2, p.accent, 0);
+    } else if (i.milestone) {
+      WL.square(g, x, y, gm.cell, i.milestone.color || p.accent, 0);
+    } else {
+      WL.square(g, x, y, gm.cell, i.state === 'past' ? p.dim(0.70) : p.dim(0.13), 0);
+    }
+  });
+
+  var add = WL.layer();
+
+  function centered(html, css) {
+    css.left = '0px'; css.width = b.W + 'px'; css.textAlign = 'center';
+    add(html, css);
+  }
+
+  centered(WL.fmt(c.left, d.lang) + ' <span style="color:' + p.dim(0.42) + '">' + T[c.kLeft]
+           + '</span>', {
+    top: (oy + gm.h + 52 * u) + 'px', fontSize: (34 * u) + 'px',
+    fontWeight: '300', color: p.fg
+  });
+
+  centered(d.countryName + ' &nbsp;&middot;&nbsp; ' + Math.round(d.percent) + '% ' + T.done
+           + (d.showEndDate ? ' &nbsp;&middot;&nbsp; ' + T.until + ' ' + d.endYear : ''), {
+    cls: 'eyebrow', bottom: (b.bottom * 0.6) + 'px', fontSize: (14 * u) + 'px',
+    letterSpacing: (4 * u) + 'px', color: p.dim(0.3)
+  });
+
+  if (d.customText) {
+    centered(d.customText, {
+      top: (oy + gm.h + 104 * u) + 'px', fontSize: (22 * u) + 'px',
+      fontStyle: 'italic', color: p.dim(0.35)
+    });
+  }
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

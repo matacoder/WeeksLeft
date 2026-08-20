@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rings</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+function arcPath(cx, cy, rad, fromDeg, toDeg) {
+  var a0 = (fromDeg - 90) * Math.PI / 180, a1 = (toDeg - 90) * Math.PI / 180;
+  var x0 = cx + rad * Math.cos(a0), y0 = cy + rad * Math.sin(a0);
+  var x1 = cx + rad * Math.cos(a1), y1 = cy + rad * Math.sin(a1);
+  var large = (toDeg - fromDeg) > 180 ? 1 : 0;
+  return 'M ' + x0 + ' ' + y0 + ' A ' + rad + ' ' + rad + ' 0 ' + large + ' 1 ' + x1 + ' ' + y1;
+}
+
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  document.body.style.background = p.bg;
+
+  var add = WL.layer();
+  var cx = b.left + b.w / 2, cy = b.top + b.h / 2;
+  var R = Math.min(b.w, b.h) * 0.42, sw = R * 0.075;
+
+  var yearPct = (d.curCol + 1) / 52 * 100;
+  var weekPct = ((d.daysLived % 7) + 1) / 7 * 100;
+
+  var rings = [
+    { r: R,             v: d.percent, col: p.accent,    w: sw },
+    { r: R - sw * 2.1,  v: yearPct,   col: p.dim(0.5),  w: sw * 0.55 },
+    { r: R - sw * 3.6,  v: weekPct,   col: p.dim(0.28), w: sw * 0.55 }
+  ];
+
+  var svg = rings.map(function (rg) {
+    var track = '<circle cx="' + cx + '" cy="' + cy + '" r="' + rg.r + '" fill="none" stroke="'
+              + p.dim(0.10) + '" stroke-width="' + rg.w + '"/>';
+    var v = Math.max(0.35, Math.min(99.99, rg.v));
+    return track + '<path d="' + arcPath(cx, cy, rg.r, 0, v * 3.6) + '" fill="none" stroke="'
+         + rg.col + '" stroke-width="' + rg.w + '" stroke-linecap="round"/>';
+  }).join('');
+
+  document.getElementById('ui').insertAdjacentHTML('beforeend',
+    '<svg viewBox="0 0 ' + b.W + ' ' + b.H + '" preserveAspectRatio="none">' + svg + '</svg>');
+
+  function centered(html, css) {
+    css.left = '0px'; css.width = b.W + 'px'; css.textAlign = 'center';
+    add(html, css);
+  }
+
+  centered(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(d.percent) + '%', {
+    cls: 'num', top: (cy - 92 * u) + 'px', fontSize: (150 * u) + 'px', color: p.fg
+  });
+  centered(d.showNumbers ? T[c.kLeft] : T.done, {
+    cls: 'eyebrow', top: (cy + 74 * u) + 'px', fontSize: (20 * u) + 'px',
+    letterSpacing: (5 * u) + 'px', color: p.accent
+  });
+
+  WL.header(add, d, p, b, Math.round(d.percent) + '% ' + T.done);
+
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived]
+      + (d.customText ? ' &nbsp;&middot;&nbsp; ' + d.customText : ''), {
+    cls: 'nw', left: b.left + 'px', bottom: b.bottom + 'px',
+    fontSize: (19 * u) + 'px', color: p.dim(0.4)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

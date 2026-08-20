@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Terminal</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  #ui { padding:0; }
+  pre { margin:0; }
+</style>
+</head>
+<body>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* The same grid, drawn in block characters. Monospace, no chrome. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  document.body.style.background = p.bg;
+
+  var add = WL.layer();
+  var rows = Math.max(1, d.gridRows), cols = d.gridCols || 52;
+
+  /* size the monospace block to the available box (advance width ≈ 0.6em) */
+  var lh = 1.08;
+  var fs = Math.min(b.h / (rows * lh), (b.w * 0.5) / ((cols + 5) * 0.601));
+
+  var msByCell = {};
+  (d.milestones || []).forEach(function (m) { msByCell[m.row + ':' + m.col] = m; });
+
+  var html = '';
+  for (var r = 0; r < rows; r++) {
+    var line = (r % 10 === 0 ? ('  ' + r).slice(-3) : '   ') + ' ';
+    var out = '';
+    for (var col = 0; col < cols; col++) {
+      var ms = msByCell[r + ':' + col];
+      if (r === d.curRow && col === d.curCol) {
+        out += '<span style="color:' + p.accent + '">█</span>';
+      } else if (ms) {
+        out += '<span style="color:' + (ms.color || p.accent) + '">█</span>';
+      } else if (r < d.curRow || (r === d.curRow && col < d.curCol)) {
+        out += '<span style="color:' + p.dim(0.60) + '">█</span>';
+      } else {
+        out += '<span style="color:' + p.dim(0.16) + '">░</span>';
+      }
+    }
+    html += '<span style="color:' + p.dim(0.28) + '">' + line + '</span>' + out + '\n';
+  }
+
+  add('<pre>' + html + '</pre>', {
+    cls: 'mono', right: b.right + 'px', top: b.top + 'px',
+    fontSize: fs + 'px', lineHeight: lh, letterSpacing: '0'
+  });
+
+  var lines = [
+    '$ weeksleft --status',
+    '',
+    'birth      ' + d.birthDate,
+    'region     ' + d.countryName,
+    'lived      ' + WL.fmt(c.lived, d.lang) + '  ' + T[c.kLived],
+    'ahead      ' + WL.fmt(c.left, d.lang) + '  ' + T[c.kLeft],
+    'progress   ' + Math.round(d.percent) + '%',
+    d.showEndDate ? 'projected  ' + d.endYear : '',
+    '',
+    d.customText ? '# ' + d.customText : '$ _'
+  ].filter(function (s) { return s !== ''; });
+
+  add(lines.map(function (s) {
+    var accent = s.charAt(0) === '$' || s.charAt(0) === '#';
+    return '<div style="color:' + (accent ? p.accent : p.dim(0.55)) + '">'
+         + s.replace(/ /g, '&nbsp;') + '</div>';
+  }).join(''), {
+    cls: 'mono', left: b.left + 'px', top: (b.top + b.h * 0.22) + 'px',
+    fontSize: (26 * u) + 'px', lineHeight: '1.75'
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

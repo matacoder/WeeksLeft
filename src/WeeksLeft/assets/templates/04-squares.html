@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Squares</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Tight square tiles, centred, with the headline sitting under the block. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var footer = 200 * u;
+  var gm = WL.wrapGeom(d, b, { gap: 0.34, maxH: b.h - footer, maxW: b.w });
+  var ox = b.left + (b.w - gm.w) / 2;
+  var oy = b.top + (b.h - footer - gm.h) / 2;
+  var radius = gm.cell * 0.16;
+
+  var lived = p.dim(0.66), future = p.dim(0.10);
+
+  WL.eachWeek(d, gm, ox, oy, function (x, y, i) {
+    if (i.state === 'now') {
+      WL.square(g, x - gm.cell * 0.30, y - gm.cell * 0.30, gm.cell * 1.6, p.accent, radius * 1.6);
+    } else if (i.milestone) {
+      WL.square(g, x - gm.cell * 0.14, y - gm.cell * 0.14, gm.cell * 1.28,
+                i.milestone.color || p.accent, radius);
+    } else {
+      WL.square(g, x, y, gm.cell, i.state === 'past' ? lived : future, radius);
+    }
+  });
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  var baseY = oy + gm.h + 62 * u;
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: ox + 'px', top: baseY + 'px',
+    fontSize: (118 * u) + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T[c.kLeft] : T.stillAhead, {
+    cls: 'eyebrow nw', left: ox + 'px', top: (baseY + 124 * u) + 'px',
+    fontSize: (21 * u) + 'px', letterSpacing: (4.5 * u) + 'px', color: p.accent
+  });
+
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived] + '<br>' + Math.round(d.percent) + '% ' + T.done, {
+    right: (b.W - ox - gm.w) + 'px', top: (baseY + 20 * u) + 'px', textAlign: 'right',
+    fontSize: (22 * u) + 'px', lineHeight: '1.7', color: p.dim(0.45)
+  });
+
+  if (d.customText) {
+    add(d.customText, {
+      cls: 'nw', left: ox + 'px', top: (baseY + 168 * u) + 'px',
+      fontSize: (21 * u) + 'px', fontStyle: 'italic', color: p.dim(0.35)
+    });
+  }
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

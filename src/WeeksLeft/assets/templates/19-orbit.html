@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Orbit</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/*
+  One ring per year of life, like growth rings in a tree. Years already lived are
+  closed circles, the year in progress is an arc that is still being drawn, and the
+  years ahead are faint outlines waiting to be filled.
+*/
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var rows = Math.max(1, d.gridRows);
+  var cx = b.left + b.w / 2, cy = b.top + b.h / 2;
+  var rMax = Math.min(b.w, b.h) / 2 * 0.97;
+  var rMin = rMax * 0.09;
+  var gap = (rMax - rMin) / Math.max(1, rows - 1);
+  var lw = Math.max(1, gap * 0.46);
+
+  function ring(rad, from, to, colour, width) {
+    if (rad <= 0) return;
+    g.beginPath();
+    g.arc(cx, cy, rad, (from - 90) * Math.PI / 180, (to - 90) * Math.PI / 180);
+    g.strokeStyle = colour;
+    g.lineWidth = width;
+    g.lineCap = 'round';
+    g.stroke();
+  }
+
+  for (var row = 0; row < rows; row++) {
+    var rad = rMin + gap * row;
+    if (row < d.curRow) {
+      ring(rad, 0, 359.99, p.dim(0.30 + 0.28 * (row / Math.max(1, d.curRow))), lw);
+    } else if (row === d.curRow) {
+      ring(rad, 0, 359.99, p.dim(0.14), lw);
+      ring(rad, 0, Math.max(3, (d.curCol + 1) / 52 * 360), p.accent, lw);
+    } else {
+      ring(rad, 0, 359.99, p.dim(0.07), Math.max(0.6, lw * 0.55));
+    }
+  }
+
+  /* milestones sit on their own ring, at the week they happened */
+  (d.milestones || []).forEach(function (m) {
+    if (m.row >= rows) return;
+    var rad = rMin + gap * m.row;
+    var a = (m.col / 52) * Math.PI * 2 - Math.PI / 2;
+    var s = Math.max(4, gap * 1.1);
+    WL.dot(g, cx + rad * Math.cos(a) - s / 2, cy + rad * Math.sin(a) - s / 2, s,
+           m.color || p.accent);
+  });
+
+  var add = WL.layer();
+  WL.header(add, d, p, b, Math.round(d.percent) + '% ' + T.done);
+
+  function centered(html, css) {
+    css.left = '0px'; css.width = b.W + 'px'; css.textAlign = 'center';
+    add(html, css);
+  }
+
+  centered(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'num', top: (cy - 34 * u) + 'px', fontSize: (48 * u) + 'px', color: p.fg
+  });
+
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived], {
+    cls: 'nw', left: b.left + 'px', bottom: b.bottom + 'px',
+    fontSize: (21 * u) + 'px', color: p.dim(0.42)
+  });
+  add(T[c.kLeft].toUpperCase() + (d.customText ? ' &nbsp;&middot;&nbsp; ' + d.customText : ''), {
+    cls: 'eyebrow nw', right: b.right + 'px', bottom: b.bottom + 'px', textAlign: 'right',
+    fontSize: (18 * u) + 'px', letterSpacing: (4 * u) + 'px', color: p.accent
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

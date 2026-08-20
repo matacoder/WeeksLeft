@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Years</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* One big tile per year of life, ten to a row — a whole life on a single page. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var years = Math.max(1, d.gridRows);
+  var cols = 10, rows = Math.ceil(years / cols);
+  var head = 250 * u;
+
+  var gm = WL.geom(d, b, { cols: cols, rows: rows, gap: 0.26,
+                           maxW: b.w, maxH: b.h - head });
+  var ox = b.left + (b.w - gm.w) / 2;
+  var oy = b.top + head + (b.h - head - gm.h) / 2;
+  var radius = gm.cell * 0.14;
+
+  var age = Math.floor(d.ageYears);
+  var yearFrac = d.ageYears - age;
+
+  for (var i = 0; i < years; i++) {
+    var x = ox + (i % cols) * gm.stepX, y = oy + Math.floor(i / cols) * gm.stepY;
+
+    if (i < age) {
+      WL.square(g, x, y, gm.cell, p.dim(0.44), radius);
+    } else if (i === age) {
+      /* the year in progress fills up from the bottom */
+      WL.square(g, x, y, gm.cell, p.dim(0.16), radius);
+      var fh = gm.cell * yearFrac;
+      g.save();
+      g.beginPath();
+      g.rect(x, y + gm.cell - fh, gm.cell, fh);
+      g.clip();
+      WL.square(g, x, y, gm.cell, p.accent, radius);
+      g.restore();
+    } else {
+      WL.square(g, x, y, gm.cell, p.dim(0.10), radius);
+    }
+  }
+
+  /* decade labels down the left edge */
+  g.font = '600 ' + (13 * u).toFixed(1) + 'px "Segoe UI",system-ui,sans-serif';
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (var r = 0; r < rows; r++) {
+    g.fillStyle = p.dim(r * 10 <= age ? 0.45 : 0.2);
+    g.fillText(String(r * 10), ox - 22 * u, oy + r * gm.stepY + gm.cell / 2);
+  }
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  var left = Math.max(0, Math.round(d.yearsTotal - d.ageYears));
+
+  add(d.showNumbers ? WL.fmt(left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: b.left + 'px', top: (b.top + 58 * u) + 'px',
+    fontSize: (150 * u) + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T.aheadY : T.stillAhead, {
+    cls: 'eyebrow nw', left: b.left + 'px', top: (b.top + 190 * u) + 'px',
+    fontSize: (24 * u) + 'px', letterSpacing: (5 * u) + 'px', color: p.accent
+  });
+  add(T.age + ' ' + age + ' &nbsp;&middot;&nbsp; ' + Math.round(d.percent) + '% ' + T.done
+      + (d.customText ? '<br>' + d.customText : ''), {
+    right: b.right + 'px', top: (b.top + 150 * u) + 'px', textAlign: 'right',
+    fontSize: (22 * u) + 'px', lineHeight: '1.7', color: p.dim(0.45)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

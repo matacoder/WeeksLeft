@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Full Bleed</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Dots run edge to edge; the number is knocked out of the middle as negative space. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var pad = 44 * u;
+  var gm = WL.wrapGeom(d, b, { gap: 0.50, maxW: b.W - pad * 2, maxH: b.H - pad * 2 });
+  var ox = (b.W - gm.w) / 2, oy = (b.H - gm.h) / 2;
+
+  /*
+    The type sits in the middle, so dots fade out around it — with a soft falloff
+    rather than a hard rectangle, which would read as a hole cut in the field.
+  */
+  var tx = b.W / 2, ty = b.H * 0.50;
+  var rx = b.W * 0.30, ry = b.H * 0.135;
+
+  WL.eachWeek(d, gm, ox, oy, function (x, y, i) {
+    var dx = (x + gm.cell / 2 - tx) / rx, dy = (y + gm.cell / 2 - ty) / ry;
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var fade = dist >= 1.55 ? 1 : Math.max(0.05, Math.pow(Math.max(0, (dist - 0.75) / 0.8), 1.5));
+    var inBand = fade < 0.5;
+
+    if (i.state === 'now') {
+      /* this week always reads at full strength, even under the type */
+      WL.dot(g, x - gm.cell * 0.6, y - gm.cell * 0.6, gm.cell * 2.2, p.accent);
+    } else if (i.milestone && !inBand) {
+      WL.dot(g, x - gm.cell * 0.2, y - gm.cell * 0.2, gm.cell * 1.4,
+             i.milestone.color || p.accent);
+    } else {
+      WL.dot(g, x, y, gm.cell, i.state === 'past' ? p.dim(0.55 * fade) : p.dim(0.13 * fade));
+    }
+  });
+
+  var add = WL.layer();
+
+  function centered(html, css) {
+    css.left = '0px'; css.width = b.W + 'px'; css.textAlign = 'center';
+    add(html, css);
+  }
+
+  centered(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big', top: (b.H * 0.41) + 'px', fontSize: (190 * u) + 'px', color: p.fg
+  });
+  centered(d.showNumbers ? T[c.kLeft] : T.stillAhead, {
+    cls: 'eyebrow', top: (b.H * 0.41 + 172 * u) + 'px', fontSize: (24 * u) + 'px',
+    letterSpacing: (7 * u) + 'px', color: p.accent
+  });
+
+  add(d.countryName + (d.showEndDate ? ' &nbsp;&middot;&nbsp; ' + T.until + ' ' + d.endYear : ''), {
+    cls: 'eyebrow nw', left: b.left + 'px', bottom: (b.bottom * 0.5) + 'px',
+    fontSize: (15 * u) + 'px', letterSpacing: (3 * u) + 'px', color: p.dim(0.4)
+  });
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived], {
+    cls: 'eyebrow nw', right: b.right + 'px', bottom: (b.bottom * 0.5) + 'px',
+    fontSize: (15 * u) + 'px', letterSpacing: (3 * u) + 'px', color: p.dim(0.4)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

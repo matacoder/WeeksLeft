@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spiral</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Every week as a dot on an Archimedean spiral, birth at the centre. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var total = Math.max(1, d.weeksTotal);
+  var cx = b.left + b.w / 2, cy = b.top + b.h / 2;
+  var rMax = Math.min(b.w, b.h) / 2 * 0.96;
+  var rMin = rMax * 0.06;
+
+  var msWeeks = {};
+  (d.milestones || []).forEach(function (m) { msWeeks[m.week] = m; });
+
+  /*
+    Dots are spaced by arc length, not by angle, so the middle of the spiral is not a
+    crowded starburst. `ringGap` is solved for so the last week lands on the outer edge.
+  */
+  function endRadius(ringGap) {
+    var r = rMin, spacing = ringGap * 0.92, k = ringGap / (2 * Math.PI);
+    for (var i = 0; i < total; i++) r += k * (spacing / r);
+    return r;
+  }
+
+  var lo = 0.5, hi = rMax;
+  for (var it = 0; it < 40; it++) {
+    var mid = (lo + hi) / 2;
+    if (endRadius(mid) < rMax) lo = mid; else hi = mid;
+  }
+  var ringGap = (lo + hi) / 2;
+  var spacing = ringGap * 0.92;
+  var size = Math.max(1.4, ringGap * 0.46);
+
+  var rad = rMin, ang = -Math.PI / 2;
+
+  for (var i = 0; i < total; i++) {
+    var x = cx + rad * Math.cos(ang) - size / 2;
+    var y = cy + rad * Math.sin(ang) - size / 2;
+    var ms = msWeeks[i];
+    var dTheta = spacing / rad;
+    ang += dTheta;
+    rad += ringGap / (2 * Math.PI) * dTheta;
+
+    if (i === d.weeksLived) {
+      WL.dot(g, x - size * 1.4, y - size * 1.4, size * 3.8, p.acc(0.25));
+      WL.dot(g, x - size * 0.6, y - size * 0.6, size * 2.2, p.accent);
+    } else if (ms) {
+      WL.dot(g, x - size * 0.4, y - size * 0.4, size * 1.8, ms.color || p.accent);
+    } else {
+      WL.dot(g, x, y, size, i < d.weeksLived ? p.dim(0.55) : p.dim(0.13));
+    }
+  }
+
+  var add = WL.layer();
+  WL.header(add, d, p, b, Math.round(d.percent) + '% ' + T.done);
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: b.left + 'px', bottom: (b.bottom + 46 * u) + 'px',
+    fontSize: (104 * u) + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T[c.kLeft] : T.stillAhead, {
+    cls: 'eyebrow nw', left: b.left + 'px', bottom: b.bottom + 'px',
+    fontSize: (20 * u) + 'px', letterSpacing: (4.5 * u) + 'px', color: p.accent
+  });
+  add(WL.fmt(c.lived, d.lang) + ' ' + T[c.kLived]
+      + (d.customText ? '<br>' + d.customText : ''), {
+    right: b.right + 'px', bottom: b.bottom + 'px', textAlign: 'right',
+    fontSize: (20 * u) + 'px', lineHeight: '1.6', color: p.dim(0.42)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

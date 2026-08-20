@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cards</title>
+<link rel="stylesheet" href="base.css">
+<style>
+  .card { border-radius:1.1em; }
+</style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* Three counters of what is still ahead, over a quiet dot field. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  /* background: the life grid, deliberately faint */
+  var gm = WL.wrapGeom(d, b, { gap: 0.62, maxW: b.W, maxH: b.H });
+  var ox = (b.W - gm.w) / 2, oy = (b.H - gm.h) / 2;
+  WL.eachWeek(d, gm, ox, oy, function (x, y, i) {
+    if (i.state === 'now') WL.dot(g, x - gm.cell * 0.5, y - gm.cell * 0.5, gm.cell * 2, p.acc(0.75));
+    else WL.dot(g, x, y, gm.cell, i.state === 'past' ? p.dim(0.20) : p.dim(0.06));
+  });
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  var cards = [
+    { v: d.yearsLeft > 0 ? Math.round(d.yearsLeft) : 0, k: T.aheadY },
+    { v: Math.max(0, d.monthsTotal - d.monthsLived), k: T.aheadM },
+    { v: d.weeksLeft, k: T.ahead }
+  ];
+
+  var gap = 34 * u;
+  var cw = (b.w - gap * (cards.length - 1)) / cards.length;
+  var ch = Math.min(b.h * 0.52, 420 * u);
+  var top = b.top + (b.h - ch) / 2;
+
+  cards.forEach(function (card, i) {
+    var x = b.left + i * (cw + gap);
+    var primary = i === cards.length - 1;
+
+    add('', {
+      cls: 'card', left: x + 'px', top: top + 'px', width: cw + 'px', height: ch + 'px',
+      background: primary ? p.acc(0.14) : p.dim(0.05),
+      border: '1px solid ' + (primary ? p.acc(0.45) : p.dim(0.12))
+    });
+
+    add(WL.fmt(card.v, d.lang), {
+      cls: 'big nw', left: (x + 42 * u) + 'px', top: (top + ch * 0.30) + 'px',
+      fontSize: Math.min(cw / 4.6, 130 * u) + 'px', color: primary ? p.fg : p.dim(0.8)
+    });
+    add(card.k, {
+      cls: 'eyebrow nw', left: (x + 42 * u) + 'px', top: (top + ch * 0.30 + 118 * u) + 'px',
+      fontSize: (20 * u) + 'px', letterSpacing: (4 * u) + 'px',
+      color: primary ? p.accent : p.dim(0.4)
+    });
+  });
+
+  add(Math.round(d.percent) + '% ' + T.done
+      + (d.customText ? ' &nbsp;&middot;&nbsp; ' + d.customText : ''), {
+    cls: 'eyebrow nw', left: b.left + 'px', bottom: (b.bottom * 0.5) + 'px',
+    fontSize: (15 * u) + 'px', letterSpacing: (3 * u) + 'px', color: p.dim(0.4)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

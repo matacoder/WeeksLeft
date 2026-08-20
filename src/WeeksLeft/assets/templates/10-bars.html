@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Year Bars</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/* One bar per year of life. Lived years are solid, the current one is partly filled. */
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var years = Math.max(1, d.gridRows);
+  var cols = years > 44 ? 2 : 1;
+  var perCol = Math.ceil(years / cols);
+  var colGap = 90 * u;
+  var colW = (b.w - colGap * (cols - 1)) / cols;
+  var labelW = 46 * u;
+  var barW = colW - labelW;
+
+  var slot = b.h / perCol;
+  var barH = Math.min(slot * 0.44, 18 * u);
+
+  var age = Math.floor(d.ageYears);
+  var frac = d.ageYears - age;
+
+  for (var i = 0; i < years; i++) {
+    var col = Math.floor(i / perCol), row = i % perCol;
+    var x = b.left + col * (colW + colGap) + labelW;
+    var y = b.top + row * slot + (slot - barH) / 2;
+
+    g.fillStyle = p.dim(0.09);
+    g.fillRect(x, y, barW, barH);
+
+    if (i < age) {
+      g.fillStyle = p.dim(0.38);
+      g.fillRect(x, y, barW, barH);
+    } else if (i === age) {
+      g.fillStyle = p.accent;
+      g.fillRect(x, y, barW * frac, barH);
+    }
+
+    if (i % 10 === 0) {
+      g.font = '600 ' + (12 * u).toFixed(1) + 'px "Segoe UI",system-ui,sans-serif';
+      g.textAlign = 'right'; g.textBaseline = 'middle';
+      g.fillStyle = p.dim(i <= age ? 0.45 : 0.22);
+      g.fillText(String(i), x - 14 * u, y + barH / 2);
+    }
+  }
+
+  /* milestones as notches on their year bar */
+  (d.milestones || []).forEach(function (m) {
+    if (m.row >= years) return;
+    var col = Math.floor(m.row / perCol), row = m.row % perCol;
+    var x = b.left + col * (colW + colGap) + labelW;
+    var y = b.top + row * slot + (slot - barH) / 2;
+    g.fillStyle = m.color || p.accent;
+    g.fillRect(x + barW * (m.col / 52) - 1.5 * u, y - 5 * u, 3 * u, barH + 10 * u);
+  });
+
+  var add = WL.layer();
+  WL.header(add, d, p, b, WL.fmt(c.left, d.lang) + ' ' + T[c.kLeft]);
+
+  add(Math.round(d.percent) + '% ' + T.done
+      + (d.customText ? ' &nbsp;&middot;&nbsp; ' + d.customText : ''), {
+    cls: 'eyebrow nw', left: b.left + 'px', bottom: (b.bottom * 0.45) + 'px',
+    fontSize: (15 * u) + 'px', letterSpacing: (3 * u) + 'px', color: p.dim(0.4)
+  });
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>

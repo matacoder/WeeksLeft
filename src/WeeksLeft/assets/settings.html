@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>WeeksLeft</title>
+<style>
+  :root {
+    --bg:#0E0E11; --panel:#16161B; --line:#2A2A33;
+    --fg:#EDEDEA; --dim:#8C8C99; --accent:#E8552D;
+  }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+              font-family:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif; font-size:13px; }
+  body { display:flex; overflow:hidden; }
+
+  #left { width:470px; min-width:470px; height:100%; overflow-y:auto; padding:20px 22px 96px;
+          border-right:1px solid var(--line); }
+  #right { flex:1; display:flex; flex-direction:column; padding:20px; gap:14px; min-width:0; }
+
+  h1 { font-size:17px; font-weight:600; margin:0 0 2px; letter-spacing:-0.01em; }
+  .sub { color:var(--dim); font-size:12px; margin-bottom:18px; }
+
+  section { border-top:1px solid var(--line); padding:16px 0 4px; }
+  section:first-of-type { border-top:none; padding-top:4px; }
+  h2 { font-size:11px; text-transform:uppercase; letter-spacing:1.4px; color:var(--dim);
+       margin:0 0 12px; font-weight:600; }
+
+  .row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .row > label { width:152px; min-width:152px; color:var(--dim); }
+  .row > .ctl { flex:1; min-width:0; }
+
+  input[type=text], input[type=date], input[type=number], select {
+    width:100%; background:var(--panel); color:var(--fg); border:1px solid var(--line);
+    border-radius:6px; padding:7px 9px; font:inherit; outline:none;
+  }
+  input:focus, select:focus { border-color:var(--accent); }
+  input[type=color] { width:42px; height:32px; padding:2px; background:var(--panel);
+                      border:1px solid var(--line); border-radius:6px; }
+  input[type=range] { flex:1; accent-color:var(--accent); }
+
+  .check { display:flex; align-items:center; gap:8px; margin-bottom:9px; cursor:pointer; }
+  .check input { accent-color:var(--accent); width:15px; height:15px; }
+
+  .seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { flex:1; background:var(--panel); color:var(--dim); border:none; padding:7px 4px;
+                font:inherit; cursor:pointer; border-right:1px solid var(--line); }
+  .seg button:last-child { border-right:none; }
+  .seg button.on { background:var(--accent); color:#fff; }
+
+  .gallery { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .card { border:1px solid var(--line); border-radius:8px; overflow:hidden; cursor:pointer;
+          background:#000; }
+  .card.on { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .card .thumb { width:100%; aspect-ratio:16/9; overflow:hidden; position:relative; }
+  .card iframe { position:absolute; left:0; top:0; width:1920px; height:1080px;
+                 transform-origin:0 0; border:0; pointer-events:none; }
+  .card .name { padding:5px 8px; font-size:11px; color:var(--dim); background:var(--panel);
+                border-top:1px solid var(--line); }
+  .card.on .name { color:var(--fg); background:var(--accent); }
+
+  #previewWrap { flex:0 0 auto; width:100%; aspect-ratio:16/9; max-height:calc(100% - 70px);
+                 border:1px solid var(--line); border-radius:10px; overflow:hidden;
+                 background:#000; position:relative; }
+  #preview { position:absolute; left:0; top:0; width:1920px; height:1080px;
+             transform-origin:0 0; border:0; }
+  #stats { display:flex; gap:26px; flex-wrap:wrap; color:var(--dim); font-size:12px; }
+  #stats b { color:var(--fg); font-weight:600; font-size:16px; display:block; margin-bottom:2px; }
+
+  #bar { position:fixed; left:0; bottom:0; width:470px; padding:14px 22px;
+         background:var(--bg); border-top:1px solid var(--line);
+         display:flex; gap:8px; z-index:5; }
+  button.primary { background:var(--accent); color:#fff; border:none; border-radius:6px;
+                   padding:9px 16px; font:inherit; font-weight:600; cursor:pointer; }
+  button.ghost { background:var(--panel); color:var(--fg); border:1px solid var(--line);
+                 border-radius:6px; padding:9px 14px; font:inherit; cursor:pointer; }
+  button:disabled { opacity:0.45; cursor:default; }
+  .hint { color:var(--dim); font-size:11px; margin:-2px 0 12px; line-height:1.5; }
+  #status { color:var(--dim); font-size:12px; align-self:center; }
+
+  .ms { display:flex; gap:6px; margin-bottom:6px; align-items:center; }
+  .ms input[type=date] { width:132px; }
+  .ms input[type=color] { width:34px; height:30px; }
+  .ms .x { background:none; border:none; color:var(--dim); cursor:pointer; font-size:16px; padding:0 4px; }
+  ::-webkit-scrollbar { width:10px; }
+  ::-webkit-scrollbar-thumb { background:#2E2E38; border-radius:5px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+</style>
+</head>
+<body>
+
+<div id="left">
+  <h1 id="ttl">WeeksLeft</h1>
+  <div class="sub" id="subttl"></div>
+
+  <section>
+    <h2 id="h-who"></h2>
+    <div class="row"><label id="l-birth"></label><div class="ctl"><input type="date" id="birthDate"></div></div>
+    <div class="row"><label id="l-sex"></label><div class="ctl"><div class="seg" id="sex"></div></div></div>
+    <div class="row"><label id="l-country"></label><div class="ctl"><select id="country"></select></div></div>
+  </section>
+
+  <section>
+    <h2 id="h-model"></h2>
+    <div class="row"><label id="l-model"></label><div class="ctl"><select id="model"></select></div></div>
+    <div class="hint" id="modelHint"></div>
+    <div class="row" id="customAgeRow" style="display:none">
+      <label id="l-customage"></label>
+      <div class="ctl"><input type="number" id="customTargetAge" min="1" max="115" step="1"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="h-design"></h2>
+    <div class="row"><label id="l-rotation"></label><div class="ctl"><select id="rotation"></select></div></div>
+    <div class="hint" id="galleryHint"></div>
+    <div class="gallery" id="gallery"></div>
+    <div style="height:14px"></div>
+    <div class="row"><label id="l-theme"></label><div class="ctl"><div class="seg" id="theme"></div></div></div>
+    <div class="row"><label id="l-accent"></label><div class="ctl" style="display:flex;gap:10px;align-items:center">
+      <input type="color" id="accentColor">
+      <label class="check" style="margin:0"><input type="checkbox" id="accentSystem"><span id="l-accentsys"></span></label>
+    </div></div>
+    <div class="row"><label id="l-unit"></label><div class="ctl"><div class="seg" id="granularity"></div></div></div>
+    <div class="row"><label id="l-lang"></label><div class="ctl"><div class="seg" id="lang"></div></div></div>
+  </section>
+
+  <section>
+    <h2 id="h-content"></h2>
+    <div class="row"><label id="l-tone"></label><div class="ctl"><div class="seg" id="tone"></div></div></div>
+    <div class="hint" id="toneHint"></div>
+    <label class="check"><input type="checkbox" id="showNumbers"><span id="l-shownumbers"></span></label>
+    <label class="check"><input type="checkbox" id="showEndDate"><span id="l-showend"></span></label>
+    <div class="hint" id="endHint"></div>
+    <div class="row"><label id="l-custom"></label><div class="ctl"><input type="text" id="customText" maxlength="80"></div></div>
+    <div class="row"><label id="l-safeleft"></label><div class="ctl" style="display:flex;gap:10px;align-items:center">
+      <input type="range" id="safeLeftPercent" min="0" max="25" step="1"><span id="safeLeftVal"></span></div></div>
+    <div class="row"><label id="l-safebottom"></label><div class="ctl" style="display:flex;gap:10px;align-items:center">
+      <input type="range" id="safeBottomPercent" min="0" max="25" step="1"><span id="safeBottomVal"></span></div></div>
+  </section>
+
+  <section>
+    <h2 id="h-ms"></h2>
+    <div class="hint" id="msHint"></div>
+    <div id="msList"></div>
+    <button class="ghost" id="msAdd" style="padding:6px 12px"></button>
+  </section>
+
+  <section>
+    <h2 id="h-behave"></h2>
+    <div class="row"><label id="l-monitors"></label><div class="ctl"><select id="monitorMode"></select></div></div>
+    <div class="row"><label id="l-update"></label><div class="ctl"><select id="updateMode"></select></div></div>
+    <label class="check"><input type="checkbox" id="autoStart"><span id="l-autostart"></span></label>
+    <label class="check"><input type="checkbox" id="keepHistory"><span id="l-history"></span></label>
+    <div class="hint" id="behaveHint"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="ghost" id="openFolder" style="padding:6px 12px"></button>
+      <button class="ghost" id="openLog" style="padding:6px 12px"></button>
+    </div>
+  </section>
+
+  <section>
+    <h2 id="h-install"></h2>
+    <div class="hint" id="installHint"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="primary" id="install"></button>
+      <button class="ghost" id="uninstall"></button>
+    </div>
+    <div class="hint" id="installState" style="margin-top:10px"></div>
+  </section>
+</div>
+
+<div id="bar">
+  <button class="primary" id="apply"></button>
+  <button class="ghost" id="save"></button>
+  <span id="status"></span>
+</div>
+
+<div id="right">
+  <div id="previewWrap"><iframe id="preview" src="about:blank"></iframe></div>
+  <div id="stats"></div>
+</div>
+
+<script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Life in Weeks</title>
+<link rel="stylesheet" href="base.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="ui"></div>
+
+<script src="lib.js"></script>
+<script>
+/*
+  The week grid is right-aligned and sized to fill the column height; whatever width
+  is left over becomes a generous typographic column. Keeps a 52-wide, ~75-tall grid
+  from looking cramped on a 16:9 screen.
+*/
+function render(d) {
+  var p = WL.palette(d), T = WL.t(d.lang), b = WL.box(d), c = WL.counts(d), u = b.u;
+  var g = WL.canvas(b, p);
+
+  var gm = WL.geom(d, b, { gap: 0.36, maxW: b.w * 0.60 });
+  var ox = b.W - b.right - gm.w;
+  var oy = b.top + (b.h - gm.h) / 2;
+
+  var lived = p.dim(0.62), future = p.dim(0.12);
+
+  WL.eachCell(d, gm, ox, oy, function (x, y, i) {
+    if (i.state === 'now') {
+      WL.dot(g, x - gm.cell * 0.95, y - gm.cell * 0.95, gm.cell * 2.9, p.acc(0.18));
+      WL.dot(g, x - gm.cell * 0.22, y - gm.cell * 0.22, gm.cell * 1.45, p.accent);
+    } else if (i.milestone) {
+      WL.dot(g, x - gm.cell * 0.18, y - gm.cell * 0.18, gm.cell * 1.35,
+             i.milestone.color || p.accent);
+    } else {
+      WL.dot(g, x, y, gm.cell, i.state === 'past' ? lived : future);
+    }
+  });
+
+  /* decade ruler */
+  g.font = '600 ' + (12 * u).toFixed(1) + 'px "Segoe UI",system-ui,sans-serif';
+  g.textAlign = 'right'; g.textBaseline = 'middle';
+  for (var y0 = 0; y0 < gm.rows; y0 += 10) {
+    g.fillStyle = p.dim(y0 <= d.curRow ? 0.45 : 0.22);
+    g.fillText(String(y0), ox - 22 * u, oy + y0 * gm.stepY + gm.cell / 2);
+  }
+
+  var add = WL.layer();
+  WL.header(add, d, p, b);
+
+  var midY = oy + gm.h / 2;
+  var textW = Math.max(200 * u, ox - 84 * u - b.left);
+  var size = Math.min(textW / 3.7, 210 * u);
+
+  add(d.showNumbers ? WL.fmt(c.left, d.lang) : Math.round(100 - d.percent) + '%', {
+    cls: 'big nw', left: b.left + 'px', top: (midY - size * 0.92) + 'px',
+    fontSize: size + 'px', color: p.fg
+  });
+  add(d.showNumbers ? T[c.kLeft] : T.stillAhead, {
+    cls: 'eyebrow nw', left: b.left + 'px', top: (midY + size * 0.08) + 'px',
+    fontSize: (24 * u) + 'px', letterSpacing: (4.5 * u) + 'px', color: p.accent
+  });
+  add('<span style="color:' + p.fg + '">' + WL.fmt(c.lived, d.lang) + '</span> ' + T[c.kLived]
+      + ' &nbsp;&middot;&nbsp; <span style="color:' + p.fg + '">' + Math.round(d.percent)
+      + '%</span> ' + T.done, {
+    cls: 'nw', left: b.left + 'px', top: (midY + size * 0.08 + 52 * u) + 'px',
+    fontSize: (23 * u) + 'px', color: p.dim(0.45)
+  });
+
+  var ms = (d.milestones || []).slice(0, 6);
+  if (ms.length) {
+    add('<div class="legend">' + ms.map(function (m) {
+      return '<div><i style="width:' + (11 * u) + 'px;height:' + (11 * u) + 'px;background:'
+           + (m.color || p.accent) + '"></i>' + m.label + '</div>';
+    }).join('') + '</div>', {
+      left: b.left + 'px', bottom: b.bottom + 'px', width: textW + 'px',
+      fontSize: (18 * u) + 'px', color: p.dim(0.5), lineHeight: '1.5'
+    });
+  }
+
+  if (d.customText) {
+    add(d.customText, {
+      left: b.left + 'px', bottom: (b.bottom + (ms.length ? ms.length * 28 * u + 26 * u : 0)) + 'px',
+      width: textW + 'px', fontSize: (22 * u) + 'px', fontStyle: 'italic', color: p.dim(0.38)
+    });
+  }
+}
+
+WL.boot(render);
+</script>
+</body>
+</html>
