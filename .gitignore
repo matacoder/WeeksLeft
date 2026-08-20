@@ -11,3 +11,4 @@ dist/
 # os
 Thumbs.db
 desktop.ini
+release/
